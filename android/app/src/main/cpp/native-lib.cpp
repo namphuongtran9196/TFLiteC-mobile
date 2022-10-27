@@ -127,7 +127,15 @@ Java_vn_nam_tflite_TensorUtils_detectC(JNIEnv *env, jclass clazz, jlong modelAdd
     Mat input_mat;
     // convert bitmap to OpenCV Mat
     bitmapToMat(env, input, input_mat, false);
+    float width = (float) input_mat.size().width;
+    float height = (float) input_mat.size().height;
+
+    // convert from rgba to bgr;
+    cvtColor(input_mat, input_mat, COLOR_RGBA2BGR);
+
+    // resize image to the input size
     resize(input_mat, input_mat, Size(352, 352), 0, 0, INTER_LINEAR);
+
     // inference
     TFLiteModel *model = (TFLiteModel *) modelAddr;
     PredictResult *res = model->detect(input_mat);
@@ -136,10 +144,10 @@ Java_vn_nam_tflite_TensorUtils_detectC(JNIEnv *env, jclass clazz, jlong modelAdd
     int resArrLen = model->MAX_OUTPUT * 5;
     jfloat jres[resArrLen];
     for (int i = 0; i < model->MAX_OUTPUT; ++i) {
-        jres[i * 5] = res[i].xmin;
-        jres[i * 5 + 1] = res[i].ymin;
-        jres[i * 5 + 2] = res[i].xmax;
-        jres[i * 5 + 3] = res[i].ymax;
+        jres[i * 5] = res[i].xmin / 352 * width;
+        jres[i * 5 + 1] = res[i].ymin / 352 * height;
+        jres[i * 5 + 2] = res[i].xmax / 352 * width;
+        jres[i * 5 + 3] = res[i].ymax / 352 * height;
         jres[i * 5 + 4] = res[i].score_person;
     }
 
